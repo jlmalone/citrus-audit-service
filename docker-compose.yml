@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: citrus-audit-db
+    environment:
+      POSTGRES_DB: citrus_audit
+      POSTGRES_USER: citrus
+      POSTGRES_PASSWORD: citrus123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U citrus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  audit-service:
+    build: .
+    container_name: citrus-audit-service
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/citrus_audit
+      DB_USER: citrus
+      DB_PASSWORD: citrus123
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
